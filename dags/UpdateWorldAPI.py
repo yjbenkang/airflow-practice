@@ -3,10 +3,9 @@ from airflow.decorators import task
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from datetime import datetime, timedelta
 from pandas import Timestamp
-
-import yfinance as yf
 import pandas as pd
 import logging
+import requests
 
 
 def get_Redshift_connection(autocommit=True):
@@ -17,16 +16,14 @@ def get_Redshift_connection(autocommit=True):
 
 
 @task
-def get_historical_prices(symbol):
-    ticket = yf.Ticker(symbol)
-    data = ticket.history()
+def get_worlds_info():
+    url = f"https://restcountries.com/v3/all"
+    response = requests.get(url)
+    data = response.json()
     records = []
 
-    for index, row in data.iterrows():
-        date = index.strftime('%Y-%m-%d %H:%M:%S')
-
-        records.append([date, row["Open"], row["High"], row["Low"], row["Close"], row["Volume"]])
-
+    for row in data:
+        records.append([row["name"]["official"], row["population"], row["area"]])
     return records
 
 @task
@@ -38,18 +35,14 @@ def load(schema, table, records):
         cur.execute(f"DROP TABLE IF EXISTS {schema}.{table};")
         cur.execute(f"""
 CREATE TABLE {schema}.{table} (
-    date date,
-    "open" float,
-    high float,
-    low float,
-    close float,
-    volume bigint
+    country varchar(255),
+    population bigint,
+    area float
 );""")
-        # DELETE FROM을 먼저 수행 -> FULL REFRESH을 하는 형태
         for r in records:
-            sql = f"INSERT INTO {schema}.{table} VALUES ('{r[0]}', {r[1]}, {r[2]}, {r[3]}, {r[4]}, {r[5]});"
+            sql = f"INSERT INTO {schema}.{table} VALUES (%s, %s, %s);"
             print(sql)
-            cur.execute(sql)
+            cur.execute(sql, (r[0], r[1], r[2]))
         cur.execute("COMMIT;")   # cur.execute("END;")
     except Exception as error:
         print(error)
@@ -60,16 +53,12 @@ CREATE TABLE {schema}.{table} (
 
 
 with DAG(
-    dag_id = 'UpdateSymbol',
+    dag_id = 'UpdateWorldAPI',
     start_date = datetime(2023,5,30),
     catchup=False,
     tags=['API'],
-    schedule = '0 10 * * *',
-    default_args = {
-        'retries': 3,
-        'retry_delay': timedelta(minutes=5),
-    }
+    schedule_interval='30 6 * * 6',
 ) as dag:
 
-    results = get_historical_prices("AAPL")
-    load("kyongjin1234", "stock_info", results)
+    results = get_worlds_info()
+    load("kyongjin1234", "world_info", results)
