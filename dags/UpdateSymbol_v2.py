@@ -72,10 +72,10 @@ def load(schema, table, records):
 
 with DAG(
     dag_id = 'UpdateSymbol_v2',
-    start_date = datetime(2023,5,30),
+    start_date=datetime(2023, 5, 30),
     catchup=False,
     tags=['API'],
-    schedule = '0 10 * * *'
+    schedule_interval='30 6 * * 6',
 ) as dag:
 
     results = get_historical_prices("AAPL")

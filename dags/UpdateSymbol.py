@@ -65,10 +65,6 @@ with DAG(
     catchup=False,
     tags=['API'],
     schedule = '0 10 * * *',
-    default_args = {
-        'retries': 3,
-        'retry_delay': timedelta(minutes=5),
-    }
 ) as dag:
 
     results = get_historical_prices("AAPL")

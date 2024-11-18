@@ -22,11 +22,14 @@ def etl(schema, table):
     # 서울의 위도/경도
     lat = 37.5665
     lon = 126.9780
+    print('api_key',api_key)
 
     # https://openweathermap.org/api/one-call-api
-    url = f"https://api.openweathermap.org/data/2.5/onecall?lat={lat}&lon={lon}&appid={api_key}&units=metric&exclude=current,minutely,hourly,alerts"
+    url = f"https://api.openweathermap.org/data/3.0/onecall?lat={lat}&lon={lon}&appid={api_key}&units=metric&exclude=current,minutely,hourly,alerts"
     response = requests.get(url)
+    print('response',response)
     data = json.loads(response.text)
+    print('data',data)
     """
     {'dt': 1622948400, 'sunrise': 1622923873, 'sunset': 1622976631, 'moonrise': 1622915520, 'moonset': 1622962620, 'moon_phase': 0.87, 'temp': {'day': 26.59, 'min': 15.67, 'max': 28.11, 'night': 22.68, 'eve': 26.29, 'morn': 15.67}, 'feels_like': {'day': 26.59, 'night': 22.2, 'eve': 26.29, 'morn': 15.36}, 'pressure': 1003, 'humidity': 30, 'dew_point': 7.56, 'wind_speed': 4.05, 'wind_deg': 250, 'wind_gust': 9.2, 'weather': [{'id': 802, 'main': 'Clouds', 'description': 'scattered clouds', 'icon': '03d'}], 'clouds': 44, 'pop': 0, 'uvi': 3}
     """
@@ -68,4 +71,4 @@ with DAG(
     }
 ) as dag:
 
-    etl("keeyong", "weather_forecast")
+    etl("kyongjin1234", "weather_forecast")
